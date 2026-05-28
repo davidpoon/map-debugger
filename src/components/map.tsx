@@ -1,7 +1,7 @@
-import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer } from 'react-leaflet'
 import { useEffect, useState } from 'react'
 import { GeoJSON as LeafletGeoJSON } from 'react-leaflet'
-import { parse as parseWkt } from 'terraformer-wkt-parser'
+import type { GeoJSON as GeoJSONType } from "geojson";
 
 interface MapProps {
     /** GeoJSON geometry to draw on the map */
@@ -18,12 +18,14 @@ export function Map({ geojson }: MapProps) {
                 console.log('Parsed GeoJSON geometry:', geoJsonData);
 
                 if (geoJsonData && geoJsonData.type) {
+                    console.log('GeoJSON type:', geoJsonData.type);
                     if (geoJsonData.type != "GeometryCollection") {
                         setGeoJson({ type: 'Feature', geometry: geoJsonData });
                     } else {
-                        // setGeoJson({ type: 'FeatureCollection', features: geoJsonData.geometries.map((g) => ({ type: 'Feature', geometry: g })) });
+                        setGeoJson({ type: 'FeatureCollection', features: geoJsonData.geometries.map((g) => ({ type: 'Feature', geometry: g })) });
                     }
                 } else {
+                    console.log('GeoJSON type:', geoJsonData.type);
                     setGeoJson(geoJsonData);
                 }
             } catch (err) {
