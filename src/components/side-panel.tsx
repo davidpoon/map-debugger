@@ -20,6 +20,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({ onApply }) => {
     const [inputFormat, setInputFormat] = useState<InputFormat>('wkt');
     const [geojsonInput, setGeoJSONInput] = useState('');
     const [convertedOutput, setConvertedOutput] = useState('');
+    const [error, setError] = useState<string | null>(null);
+
 
     const spatialReferences = [
         { label: 'WGS 84 (EPSG:4326)', value: 'EPSG:4326' },
@@ -174,6 +176,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ onApply }) => {
     const handleApplyGeometry = () => {
         if (!geojsonInput.trim()) {
             onApply && onApply('');
+            setError(null);
             return;
         }
         
@@ -185,15 +188,20 @@ export const SidePanel: React.FC<SidePanelProps> = ({ onApply }) => {
             if (onApply) {
                 onApply(geojson);
             }
+
+            setError(null);
         } catch (error) {
-            console.error('Invalid input:', error);
+            setError(error instanceof Error ? error.message : String(error));
         }
     };
 
     return (
         <div className="side-panel p-4 shadow-lg w-full">
-            <h2 className="text-lg font-bold mb-4">Spatial Reference</h2>
-            
+            {error && (
+                <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">
+                    {error}
+                </div>
+            )}
             <div className="mb-4">
                 <label className="block text-sm font-semibold mb-2">Input SRS:</label>
                 <select
