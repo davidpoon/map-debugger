@@ -21,7 +21,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ onApply }) => {
     const [geojsonInput, setGeoJSONInput] = useState('');
     const [convertedOutput, setConvertedOutput] = useState('');
     const [error, setError] = useState<string | null>(null);
-
+    const [showAdvanced, setShowAdvanced] = useState(false);
 
     const spatialReferences = [
         { label: 'WGS 84 (EPSG:4326)', value: 'EPSG:4326' },
@@ -42,9 +42,9 @@ export const SidePanel: React.FC<SidePanelProps> = ({ onApply }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const transformCoordinates = (geometry: any, fromSRS: string, toSRS: string): any => {
         if (!geometry || !geometry.coordinates) return geometry;
-        
+
         if (fromSRS === toSRS) return geometry;
-        
+
         const transformCoord = (coords: number[]) => {
             if (fromSRS && toSRS) {
                 try {
@@ -58,7 +58,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ onApply }) => {
             }
             return coords;
         };
-        
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const transformCoordsRecursive = (coords: any): any => {
             if (Array.isArray(coords)) {
@@ -71,7 +71,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ onApply }) => {
             }
             return coords;
         };
-        
+
         return {
             ...geometry,
             coordinates: transformCoordsRecursive(geometry.coordinates)
@@ -84,14 +84,14 @@ export const SidePanel: React.FC<SidePanelProps> = ({ onApply }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const transformGeoJSON = (geojson: any, fromSRS: string, toSRS: string): any => {
         if (!geojson) return geojson;
-        
+
         if (geojson.type === 'Feature') {
             return {
                 ...geojson,
                 geometry: transformCoordinates(geojson.geometry, fromSRS, toSRS)
             };
         }
-        
+
         if (geojson.type === 'FeatureCollection') {
             return {
                 ...geojson,
@@ -99,11 +99,11 @@ export const SidePanel: React.FC<SidePanelProps> = ({ onApply }) => {
                 features: geojson.features.map((f: any) => transformGeoJSON(f, fromSRS, toSRS))
             };
         }
-        
+
         if (geojson.type && geojson.coordinates) {
             return transformCoordinates(geojson, fromSRS, toSRS);
         }
-        
+
         return geojson;
     };
 
@@ -111,7 +111,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ onApply }) => {
         try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             let geojson: any;
-            
+
             if (format === 'wkt') {
                 geojson = wktToGeoJSON(input);
             } else if (format === 'geojson') {
@@ -122,12 +122,12 @@ export const SidePanel: React.FC<SidePanelProps> = ({ onApply }) => {
             } else {
                 return input;
             }
-            
+
             // Apply SRS transformation if needed
             if (fromSRS && toSRS && fromSRS !== toSRS) {
                 geojson = transformGeoJSON(geojson, fromSRS, toSRS);
             }
-            
+
             return JSON.stringify(geojson);
         } catch (error) {
             console.error('Conversion error:', error);
@@ -140,11 +140,11 @@ export const SidePanel: React.FC<SidePanelProps> = ({ onApply }) => {
             if (fromFormat === toFormat && !fromSRS && !toSRS) {
                 return input;
             }
-            
+
             // First convert to GeoJSON as intermediate format
             const geoJSONString = convertToGeoJSON(input, fromFormat, fromSRS, toSRS);
             const geojsonObj = JSON.parse(geoJSONString);
-            
+
             // Then convert from GeoJSON to target format
             if (toFormat === 'wkt') {
                 return geojsonToWKT(geojsonObj);
@@ -153,7 +153,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ onApply }) => {
             } else if (toFormat === 'arcgis') {
                 return JSON.stringify(geojsonToArcGIS(geojsonObj));
             }
-            
+
             return input;
         } catch (error) {
             console.error('Format conversion error:', error);
@@ -163,7 +163,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ onApply }) => {
 
     const handleConvert = (targetFormat: InputFormat) => {
         if (!geojsonInput.trim()) return;
-        
+
         try {
             const result = convertFormat(geojsonInput, inputFormat, targetFormat, inputSRS, selectedSRS);
             setConvertedOutput(result);
@@ -179,7 +179,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ onApply }) => {
             setError(null);
             return;
         }
-        
+
         try {
             // Convert input to GeoJSON format for consistency with SRS transformation
             const geojson = convertToGeoJSON(geojsonInput, inputFormat, inputSRS, 'EPSG:4326');
@@ -202,26 +202,12 @@ export const SidePanel: React.FC<SidePanelProps> = ({ onApply }) => {
                     {error}
                 </div>
             )}
-            <div className="mb-4">
+
+            <div className="mb-4 mt-4">
                 <label className="block text-sm font-semibold mb-2">Input SRS:</label>
                 <select
                     value={inputSRS}
                     onChange={(e) => setInputSRS(e.target.value)}
-                    className="w-full p-2 border rounded"
-                >
-                    {spatialReferences.map((srs) => (
-                        <option key={srs.value} value={srs.value}>
-                            {srs.label}
-                        </option>
-                    ))}
-                </select>
-            </div>
-
-            <div className="mb-4">
-                <label className="block text-sm font-semibold mb-2">Output SRS:</label>
-                <select
-                    value={selectedSRS}
-                    onChange={(e) => setSelectedSRS(e.target.value)}
                     className="w-full p-2 border rounded"
                 >
                     {spatialReferences.map((srs) => (
@@ -257,47 +243,73 @@ export const SidePanel: React.FC<SidePanelProps> = ({ onApply }) => {
                 />
             </div>
 
-            <div className="mb-4">
-                <label className="block text-sm font-semibold mb-2">Convert To:</label>
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => handleConvert('wkt')}
-                        className="flex-1 bg-gray-200 hover:bg-gray-300 py-1 px-2 rounded text-sm"
-                    >
-                        WKT
-                    </button>
-                    <button
-                        onClick={() => handleConvert('geojson')}
-                        className="flex-1 bg-gray-200 hover:bg-gray-300 py-1 px-2 rounded text-sm"
-                    >
-                        GeoJSON
-                    </button>
-                    <button
-                        onClick={() => handleConvert('arcgis')}
-                        className="flex-1 bg-gray-200 hover:bg-gray-300 py-1 px-2 rounded text-sm"
-                    >
-                        ArcGIS
-                    </button>
-                </div>
-            </div>
-
-            {convertedOutput && (
-                <div className="mb-4">
-                    <label className="block text-sm font-semibold mb-2">Converted Output:</label>
-                    <textarea
-                        value={convertedOutput}
-                        readOnly
-                        className="w-full p-2 border rounded h-32 resize-none"
-                    />
-                </div>
-            )}
-
             <button
                 onClick={handleApplyGeometry}
-                className="w-full bg-blue-500 hover:bg-blue-600 font-semibold py-2 rounded"
+                className="w-full bg-blue-500 hover:bg-blue-600 font-semibold py-2 rounded mb-4"
             >
                 Apply
             </button>
+
+            <button
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="w-full bg-gray-100 hover:bg-gray-200 py-2 rounded text-sm font-medium"
+            >
+                {showAdvanced ? 'Hide' : 'Show'} Advanced: Reprojection & Conversion
+            </button>
+
+            {showAdvanced && (
+                <>
+                    <div className="mb-4">
+                        <label className="block text-sm font-semibold mb-2">Output SRS:</label>
+                        <select
+                            value={selectedSRS}
+                            onChange={(e) => setSelectedSRS(e.target.value)}
+                            className="w-full p-2 border rounded"
+                        >
+                            {spatialReferences.map((srs) => (
+                                <option key={srs.value} value={srs.value}>
+                                    {srs.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="mb-4">
+                        <label className="block text-sm font-semibold mb-2">Convert To:</label>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => handleConvert('wkt')}
+                                className="flex-1 bg-gray-200 hover:bg-gray-300 py-1 px-2 rounded text-sm"
+                            >
+                                WKT
+                            </button>
+                            <button
+                                onClick={() => handleConvert('geojson')}
+                                className="flex-1 bg-gray-200 hover:bg-gray-300 py-1 px-2 rounded text-sm"
+                            >
+                                GeoJSON
+                            </button>
+                            <button
+                                onClick={() => handleConvert('arcgis')}
+                                className="flex-1 bg-gray-200 hover:bg-gray-300 py-1 px-2 rounded text-sm"
+                            >
+                                ArcGIS
+                            </button>
+                        </div>
+                    </div>
+
+                    {convertedOutput && (
+                        <div className="mb-4">
+                            <label className="block text-sm font-semibold mb-2">Converted Output:</label>
+                            <textarea
+                                value={convertedOutput}
+                                readOnly
+                                className="w-full p-2 border rounded h-32 resize-none"
+                            />
+                        </div>
+                    )}
+                </>
+            )}
         </div>
     );
 };

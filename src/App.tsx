@@ -13,7 +13,7 @@ function App() {
         <div className="w-2/3">
           <Map geojson={geometryGeoJSON} />
         </div>
-        <div className="w-1/3">
+        <div className="w-1/3 h-full overflow-y-auto">
           <SidePanel onApply={setGeometryGeoJSON} />
         </div>
       </div>
