@@ -172,7 +172,10 @@ export const SidePanel: React.FC<SidePanelProps> = ({ onApply }) => {
     };
 
     const handleApplyGeometry = () => {
-        if (!geojsonInput.trim()) return;
+        if (!geojsonInput.trim()) {
+            onApply && onApply('');
+            return;
+        }
         
         try {
             // Convert input to GeoJSON format for consistency with SRS transformation
