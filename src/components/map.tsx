@@ -45,7 +45,7 @@ export function Map({ geojson }: MapProps) {
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                {geoJson && <LeafletGeoJSON data={geoJson} />}
+                {geoJson && <LeafletGeoJSON key={geojson} data={geoJson} />}
             </MapContainer>
             {/* <div>{geoJson}</div> */}
         </div>
