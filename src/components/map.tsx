@@ -1,42 +1,31 @@
+// src/components/map.tsx
 import { MapContainer, TileLayer } from 'react-leaflet'
-import { useEffect, useState } from 'react'
 import { GeoJSON as LeafletGeoJSON } from 'react-leaflet'
-import type { GeoJSON as GeoJSONType } from "geojson";
 
 interface MapProps {
-    /** GeoJSON geometry to draw on the map */
     geojson?: string;
 }
 
-export function Map({ geojson }: MapProps) {
-    const [geoJson, setGeoJson] = useState<any>(null);
-
-    useEffect(() => {
-        if (geojson) {
-            try {
-                const geoJsonData = JSON.parse(geojson);
-                console.log('Parsed GeoJSON geometry:', geoJsonData);
-
-                if (geoJsonData && geoJsonData.type) {
-                    console.log('GeoJSON type:', geoJsonData.type);
-                    if (geoJsonData.type != "GeometryCollection") {
-                        setGeoJson({ type: 'Feature', geometry: geoJsonData });
-                    } else {
-                        setGeoJson({ type: 'FeatureCollection', features: geoJsonData.geometries.map((g) => ({ type: 'Feature', geometry: g })) });
-                    }
-                } else {
-                    console.log('GeoJSON type:', geoJsonData.type);
-                    setGeoJson(geoJsonData);
-                }
-            } catch (err) {
-                console.error('failed to parse GeoJSON:', err);
-                setGeoJson(null);
-            }
-        } else {
-            console.log('No GeoJSON input provided, clearing map.');
-            setGeoJson(null);
+function parseGeoJson(input: string | undefined): any {
+    if (!input) return null;
+    try {
+        const parsed = JSON.parse(input);
+        if (!parsed?.type) return null;
+        if (parsed.type === 'Feature' || parsed.type === 'FeatureCollection') return parsed;
+        if (parsed.type === 'GeometryCollection') {
+            return {
+                type: 'FeatureCollection',
+                features: parsed.geometries.map((g: any) => ({ type: 'Feature', geometry: g }))
+            };
         }
-    }, [geojson]);
+        return { type: 'Feature', geometry: parsed };
+    } catch {
+        return null;
+    }
+}
+
+export function Map({ geojson }: MapProps) {
+    const geoJsonData = parseGeoJson(geojson);
 
     return (
         <div style={{ height: '100vh' }}>
@@ -45,9 +34,8 @@ export function Map({ geojson }: MapProps) {
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                {geoJson && <LeafletGeoJSON key={geojson} data={geoJson} />}
+                {geoJsonData && <LeafletGeoJSON key={geojson} data={geoJsonData} />}
             </MapContainer>
-            {/* <div>{geoJson}</div> */}
         </div>
     )
 }
